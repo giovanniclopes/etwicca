@@ -5,6 +5,7 @@ import {
   CloudArrowDownIcon,
   CodeBracketIcon,
   CogIcon,
+  CommandLineIcon,
   ExclamationTriangleIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
@@ -327,7 +328,10 @@ export function Software() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Software</h1>
+          <div className="flex items-center space-x-2">
+            <CommandLineIcon className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">Software</h1>
+          </div>
           <p className="mt-2 text-gray-600">
             Gerenciar aplicações e licenças de software
           </p>

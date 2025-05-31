@@ -20,8 +20,8 @@ const sidebarItems: SidebarItem[] = [
   { name: "Dashboard", href: ROUTES.DASHBOARD, icon: HomeIcon },
   { name: "Hardware", href: ROUTES.HARDWARE, icon: ServerIcon },
   { name: "Software", href: ROUTES.SOFTWARE, icon: CommandLineIcon },
-  { name: "Banco de Dados", href: ROUTES.DATABASE, icon: CircleStackIcon },
   { name: "Redes", href: ROUTES.NETWORKS, icon: WifiIcon },
+  { name: "Banco de Dados", href: ROUTES.DATABASE, icon: CircleStackIcon },
 ];
 
 export default function Sidebar() {
