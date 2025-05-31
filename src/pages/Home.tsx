@@ -211,9 +211,6 @@ export function Home() {
                 </div>
               </div>
             </div>
-
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-y-8 translate-x-8"></div>
-            <div className="absolute bottom-0 left-0 w-20 h-20 bg-white bg-opacity-10 rounded-full translate-y-4 -translate-x-4"></div>
           </div>
         </div>
       </div>
