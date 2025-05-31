@@ -1,5 +1,5 @@
 import {
-  ArrowRightOnRectangleIcon,
+  ArrowRightStartOnRectangleIcon,
   BuildingOfficeIcon,
   CircleStackIcon,
   CommandLineIcon,
@@ -65,7 +65,7 @@ export default function Sidebar() {
           onClick={handleLogout}
           className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-300 rounded-lg hover:bg-slate-800 hover:text-white transition-colors"
         >
-          <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
+          <ArrowRightStartOnRectangleIcon className="w-5 h-5 mr-3" />
           Logout
         </button>
       </div>
