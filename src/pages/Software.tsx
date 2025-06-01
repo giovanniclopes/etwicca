@@ -11,6 +11,7 @@ import {
   MagnifyingGlassIcon,
   ShieldCheckIcon,
   XCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useMemo, useState } from "react";
 import { useDebounce } from "../hooks/useDebounce";
@@ -29,9 +30,19 @@ interface SoftwareItem {
   vendor: string;
   installDate: string;
   lastUpdate: string;
-  size: string;
-  dependencies: string[];
+  size: string;  dependencies: string[];
   securityRating: "high" | "medium" | "low";
+}
+
+interface UpdateCheckResult {
+  id: string;
+  name: string;
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  status: "checking" | "completed" | "error";
+  changelogUrl?: string;
+  securityUpdate?: boolean;
 }
 
 const mockSoftwareData: SoftwareItem[] = [
@@ -286,6 +297,10 @@ export function Software() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateResults, setUpdateResults] = useState<UpdateCheckResult[]>([]);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -320,9 +335,64 @@ export function Software() {
       installing: mockSoftwareData.filter(
         (item) => item.status === "installing"
       ).length,
-      errors: mockSoftwareData.filter((item) => item.status === "error").length,
-    };
+      errors: mockSoftwareData.filter((item) => item.status === "error").length,    };
   }, []);
+
+  const simulateUpdateCheck = async () => {
+    setIsCheckingUpdates(true);
+    setUpdateProgress(0);
+    setShowUpdateModal(true);
+    
+    const initialResults: UpdateCheckResult[] = mockSoftwareData.map(software => ({
+      id: software.id,
+      name: software.name,
+      currentVersion: software.version,
+      latestVersion: software.version,
+      hasUpdate: false,
+      status: "checking" as const,
+    }));
+    
+    setUpdateResults(initialResults);
+
+    for (let i = 0; i < mockSoftwareData.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+      
+      const software = mockSoftwareData[i];
+      const hasUpdate = Math.random() > 0.6;
+      const isSecurityUpdate = hasUpdate && Math.random() > 0.7;
+      
+      let latestVersion = software.version;
+      if (hasUpdate) {
+        const versionParts = software.version.split('.');
+        const patch = parseInt(versionParts[2] || '0') + Math.floor(Math.random() * 5) + 1;
+        latestVersion = `${versionParts[0]}.${versionParts[1]}.${patch}`;
+      }
+
+      setUpdateResults(prev => prev.map(result => 
+        result.id === software.id 
+          ? {
+              ...result,
+              latestVersion,
+              hasUpdate,
+              status: "completed" as const,
+              securityUpdate: isSecurityUpdate,
+              changelogUrl: hasUpdate ? `https://github.com/${software.name.toLowerCase()}/releases` : undefined,
+            }
+          : result
+      ));
+      
+      setUpdateProgress(Math.round(((i + 1) / mockSoftwareData.length) * 100));
+    }
+    
+    setIsCheckingUpdates(false);
+  };
+
+  const closeUpdateModal = () => {
+    setShowUpdateModal(false);
+    setUpdateResults([]);
+    setUpdateProgress(0);
+    setIsCheckingUpdates(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -340,8 +410,9 @@ export function Software() {
         <div className="mt-4 sm:mt-0 flex gap-3">
           <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
             Atualizar Tudo
-          </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          </button>          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            onClick={simulateUpdateCheck}
+          >
             Buscar Atualizações
           </button>
         </div>
@@ -681,10 +752,149 @@ export function Software() {
             </div>
             <div className="text-sm text-gray-500">
               Última verificação: há 5 minutos
-            </div>
-          </div>
+            </div>          </div>
         </div>
       </div>
+
+      {showUpdateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <ArrowPathIcon className={`w-6 h-6 text-blue-600 mr-3 ${isCheckingUpdates ? 'animate-spin' : ''}`} />
+                <h3 className="text-lg font-bold text-gray-900">
+                  Verificação de Atualizações
+                </h3>
+              </div>
+              <button
+                onClick={closeUpdateModal}
+                className="text-gray-400 hover:text-gray-600"
+                disabled={isCheckingUpdates}
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            {isCheckingUpdates && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">
+                    Verificando atualizações disponíveis...
+                  </span>
+                  <span className="text-sm font-medium text-blue-600">
+                    {updateProgress}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${updateProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="max-h-96 overflow-y-auto">
+              <div className="space-y-3">
+                {updateResults.map((result) => (
+                  <div
+                    key={result.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                  >
+                    <div className="flex items-center">
+                      <div className="text-2xl mr-3">
+                        {mockSoftwareData.find(s => s.id === result.id)?.icon || '📦'}
+                      </div>
+                      <div>
+                        <div className="flex items-center">
+                          <h4 className="font-medium text-gray-900">
+                            {result.name}
+                          </h4>
+                          {result.securityUpdate && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <ShieldCheckIcon className="w-3 h-3 mr-1" />
+                              Segurança
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {result.currentVersion}
+                          {result.hasUpdate && (
+                            <span className="text-blue-600 ml-2">
+                              → {result.latestVersion}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      {result.status === "checking" && (
+                        <div className="flex items-center text-blue-600">
+                          <ArrowPathIcon className="w-4 h-4 animate-spin mr-2" />
+                          <span className="text-sm">Verificando...</span>
+                        </div>
+                      )}
+                      
+                      {result.status === "completed" && !result.hasUpdate && (
+                        <div className="flex items-center text-green-600">
+                          <CheckCircleIcon className="w-4 h-4 mr-2" />
+                          <span className="text-sm">Atualizado</span>
+                        </div>
+                      )}
+                      
+                      {result.status === "completed" && result.hasUpdate && (
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center text-yellow-600">
+                            <ExclamationTriangleIcon className="w-4 h-4 mr-1" />
+                            <span className="text-sm">Atualização disponível</span>
+                          </div>
+                          <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+                            Atualizar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {!isCheckingUpdates && updateResults.length > 0 && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-blue-900">
+                      Resumo da Verificação
+                    </h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      {updateResults.filter(r => r.hasUpdate).length} atualizações disponíveis de {updateResults.length} softwares verificados
+                      {updateResults.filter(r => r.securityUpdate).length > 0 && (
+                        <span className="font-medium">
+                          {' '}• {updateResults.filter(r => r.securityUpdate).length} atualizações de segurança
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    {updateResults.some(r => r.hasUpdate) && (
+                      <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        Atualizar Tudo
+                      </button>
+                    )}
+                    <button
+                      onClick={closeUpdateModal}
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
