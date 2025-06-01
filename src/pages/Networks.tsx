@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
   SignalIcon,
   WifiIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useMemo, useState } from "react";
 import { useDebounce } from "../hooks/useDebounce";
@@ -226,6 +227,15 @@ export function Networks() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newDevice, setNewDevice] = useState({
+    name: "",
+    type: "switch" as NetworkDevice["type"],
+    ipRange: "",
+    bandwidth: "",
+    location: "",
+    maxConnections: "",
+  });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -249,6 +259,47 @@ export function Networks() {
     });
   }, [debouncedSearchTerm, filterType, filterStatus]);
 
+  const handleCreateDevice = () => {
+    const newId = `SW-${String(mockNetworkDevices.length + 1).padStart(
+      3,
+      "0"
+    )}`;
+    const newNetworkDevice: NetworkDevice = {
+      id: newId,
+      name: newDevice.name,
+      type: newDevice.type,
+      ipRange: newDevice.ipRange,
+      bandwidth: newDevice.bandwidth,
+      status: "offline",
+      devices: 0,
+      location: newDevice.location,
+      uptime: "0d 0h 0m",
+      throughput: { rx: 0, tx: 0 },
+    };
+
+    mockNetworkDevices.push(newNetworkDevice);
+    setShowCreateModal(false);
+    setNewDevice({
+      name: "",
+      type: "switch",
+      ipRange: "",
+      bandwidth: "",
+      location: "",
+      maxConnections: "",
+    });
+  };
+
+  const resetForm = () => {
+    setNewDevice({
+      name: "",
+      type: "switch",
+      ipRange: "",
+      bandwidth: "",
+      location: "",
+      maxConnections: "",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -266,8 +317,11 @@ export function Networks() {
           <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             <ChartBarIcon className="w-4 h-4 mr-2" />
             Dashboard
-          </button>
-          <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          </button>{" "}
+          <button
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => setShowCreateModal(true)}
+          >
             <PlusIcon className="w-4 h-4 mr-2" />
             Novo Dispositivo
           </button>
@@ -613,10 +667,146 @@ export function Networks() {
               <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 Próximo
               </button>
-            </div>
+            </div>{" "}
           </div>
         </div>
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900">
+                Criar Novo Dispositivo de Rede
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateDevice();
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome do Dispositivo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDevice.name}
+                    onChange={(e) =>
+                      setNewDevice({ ...newDevice, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: Tirany MDM Switch"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo
+                  </label>
+                  <select
+                    required
+                    value={newDevice.type}
+                    onChange={(e) =>
+                      setNewDevice({
+                        ...newDevice,
+                        type: e.target.value as NetworkDevice["type"],
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="switch">Switch</option>
+                    <option value="router">Roteador</option>
+                    <option value="firewall">Firewall</option>
+                    <option value="access_point">Access Point</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Faixa de IP
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDevice.ipRange}
+                    onChange={(e) =>
+                      setNewDevice({ ...newDevice, ipRange: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: 192.168.1.0/24"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Largura de Banda
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDevice.bandwidth}
+                    onChange={(e) =>
+                      setNewDevice({ ...newDevice, bandwidth: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: 1000 Mbps"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Localização
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDevice.location}
+                    onChange={(e) =>
+                      setNewDevice({ ...newDevice, location: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: Sala de Servidores - Andar 1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Criar Dispositivo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

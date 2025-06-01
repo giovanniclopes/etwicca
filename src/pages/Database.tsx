@@ -13,6 +13,7 @@ import {
   ServerIcon,
   StopIcon,
   XCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useMemo, useState } from "react";
 import { useDebounce } from "../hooks/useDebounce";
@@ -177,6 +178,15 @@ export default function Database() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedEnvironment, setSelectedEnvironment] = useState<string>("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newDatabase, setNewDatabase] = useState({
+    name: "",
+    type: "SQL" as DatabaseInstance["type"],
+    engine: "",
+    host: "",
+    port: "",
+    environment: "development" as DatabaseInstance["environment"],
+    maxConnections: "",
+  });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -263,6 +273,53 @@ export default function Database() {
     if (percentage >= 80) return "bg-red-500";
     if (percentage >= 60) return "bg-yellow-500";
     return "bg-green-500";
+  };
+
+  const handleCreateDatabase = () => {
+    const newId = `db-${String(mockDatabases.length + 1).padStart(3, "0")}`;
+    const newInstance: DatabaseInstance = {
+      id: newId,
+      name: newDatabase.name,
+      type: newDatabase.type,
+      engine: newDatabase.engine,
+      host: newDatabase.host,
+      port: parseInt(newDatabase.port),
+      status: "offline",
+      cpu: 0,
+      memory: 0,
+      storage: 0,
+      connections: 0,
+      maxConnections: parseInt(newDatabase.maxConnections),
+      uptime: "0d 0h 0m",
+      lastBackup: "Nunca",
+      version: newDatabase.engine.split(" ")[1] || "1.0",
+      environment: newDatabase.environment,
+      size: "0 GB",
+    };
+
+    mockDatabases.push(newInstance);
+    setShowCreateModal(false);
+    setNewDatabase({
+      name: "",
+      type: "SQL",
+      engine: "",
+      host: "",
+      port: "",
+      environment: "development",
+      maxConnections: "",
+    });
+  };
+
+  const resetForm = () => {
+    setNewDatabase({
+      name: "",
+      type: "SQL",
+      engine: "",
+      host: "",
+      port: "",
+      environment: "development",
+      maxConnections: "",
+    });
   };
 
   return (
@@ -598,6 +655,184 @@ export default function Database() {
           </div>
         )}
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900">
+                Criar Nova Instância de Banco de Dados
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateDatabase();
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome da Instância
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDatabase.name}
+                    onChange={(e) =>
+                      setNewDatabase({ ...newDatabase, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: etwicca_production"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo
+                  </label>
+                  <select
+                    required
+                    value={newDatabase.type}
+                    onChange={(e) =>
+                      setNewDatabase({
+                        ...newDatabase,
+                        type: e.target.value as DatabaseInstance["type"],
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="SQL">SQL</option>
+                    <option value="NoSQL">NoSQL</option>
+                    <option value="Cache">Cache</option>
+                    <option value="Graph">Graph</option>
+                    <option value="TimeSeries">Time Series</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Engine
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDatabase.engine}
+                    onChange={(e) =>
+                      setNewDatabase({ ...newDatabase, engine: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: PostgreSQL 15.3"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Host
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newDatabase.host}
+                    onChange={(e) =>
+                      setNewDatabase({ ...newDatabase, host: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: 192.168.1.10"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Porta
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={newDatabase.port}
+                    onChange={(e) =>
+                      setNewDatabase({ ...newDatabase, port: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: 5432"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ambiente
+                  </label>
+                  <select
+                    required
+                    value={newDatabase.environment}
+                    onChange={(e) =>
+                      setNewDatabase({
+                        ...newDatabase,
+                        environment: e.target
+                          .value as DatabaseInstance["environment"],
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="development">Desenvolvimento</option>
+                    <option value="staging">Staging</option>
+                    <option value="production">Produção</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Máximo de Conexões
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={newDatabase.maxConnections}
+                    onChange={(e) =>
+                      setNewDatabase({
+                        ...newDatabase,
+                        maxConnections: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="ex: 100"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Criar Instância
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
